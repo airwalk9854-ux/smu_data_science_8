@@ -56,6 +56,13 @@ with tab1:
         display_cols = ["학년", "학급", "번호", "평균", "총괄평가"]
         df1_display = df1[display_cols].copy()
         df1_display = df1_display.rename(columns={"평균": "탐구질문 만들기 평균점수"})
+
+        avg_score = df1_display["탐구질문 만들기 평균점수"].mean().round(2)
+        avg_total = df1_display["총괄평가"].mean().round(2)
+        footer_row = pd.DataFrame([
+            {"학년": "", "학급": "", "번호": "평균", "탐구질문 만들기 평균점수": avg_score, "총괄평가": avg_total}
+        ])
+        df1_display = pd.concat([df1_display, footer_row], ignore_index=True)
         
         st.dataframe(df1_display, use_container_width=True)
 
@@ -100,6 +107,13 @@ with tab2:
         display_cols = ["학년", "학급", "번호", "평균", "총괄평가"]
         df2_display = df2[display_cols].copy()
         df2_display = df2_display.rename(columns={"평균": "탐구질문 만들기 평균점수"})
+
+        avg_score = df2_display["탐구질문 만들기 평균점수"].mean().round(2)
+        avg_total = df2_display["총괄평가"].mean().round(2)
+        footer_row = pd.DataFrame([
+            {"학년": "", "학급": "", "번호": "평균", "탐구질문 만들기 평균점수": avg_score, "총괄평가": avg_total}
+        ])
+        df2_display = pd.concat([df2_display, footer_row], ignore_index=True)
         
         st.dataframe(df2_display, use_container_width=True)
 
