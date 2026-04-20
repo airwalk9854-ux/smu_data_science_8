@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import os
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
 
 # 페이지 설정
 st.set_page_config(page_title="탐구질문 관리", layout="wide")
@@ -14,6 +16,27 @@ tab1, tab2 = st.tabs(["1학기", "2학기"])
 data_dir = "data"
 file_semester1 = os.path.join(data_dir, "1학기 탐구질문 만들기.xlsx")
 file_semester2 = os.path.join(data_dir, "2학기 탐구질문 만들기.xlsx")
+
+
+def standardized_regression(df, x_col, y_col):
+    if x_col not in df.columns or y_col not in df.columns:
+        return None
+
+    X = pd.to_numeric(df[[x_col]], errors="coerce")
+    y = pd.to_numeric(df[y_col], errors="coerce")
+    valid = X[x_col].notna() & y.notna()
+    if valid.sum() < 2:
+        return None
+
+    Xs = StandardScaler().fit_transform(X.loc[valid])
+    ys = StandardScaler().fit_transform(y.loc[valid].values.reshape(-1, 1))
+    model = LinearRegression().fit(Xs, ys)
+    return {
+        "beta": float(model.coef_[0][0]),
+        "intercept": float(model.intercept_[0]),
+        "r2": float(model.score(Xs, ys)),
+        "corr": float(X.loc[valid, x_col].corr(y.loc[valid]))
+    }
 
 # 1학기 탭
 with tab1:
@@ -29,15 +52,27 @@ with tab1:
 
         st.write(f"총 {len(df1)}개의 항목")
         st.dataframe(df1, use_container_width=True)
+
+        regression1 = standardized_regression(df1, "평균점수", "총괄평가")
+        if regression1 is not None:
+            st.subheader("회귀 분석 결과")
+            st.markdown(
+                f"- 표준화 계수 (beta): **{regression1['beta']:.4f}**\n"
+                f"- 결정계수 (R²): **{regression1['r2']:.4f}**\n"
+                f"- 상관계수: **{regression1['corr']:.4f}**\n"
+                f"- 표준화 회귀식: Z(총괄평가) = {regression1['beta']:.4f} × Z(평균점수) + {regression1['intercept']:.4f}"
+            )
+        else:
+            st.warning("회귀 분석을 실행할 수 없습니다. '평균점수' 또는 '총괄평가' 열을 확인하세요.")
         
         # 다운로드 버튼
-        excel_file1 = open(file_semester1, 'rb')
-        st.download_button(
-            label="1학기 파일 다운로드",
-            data=excel_file1,
-            file_name="1학기 탐구질문 만들기.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        with open(file_semester1, 'rb') as excel_file1:
+            st.download_button(
+                label="1학기 파일 다운로드",
+                data=excel_file1,
+                file_name="1학기 탐구질문 만들기.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
     except Exception as e:
         st.error(f"파일을 읽을 수 없습니다: {e}")
 
@@ -55,14 +90,26 @@ with tab2:
 
         st.write(f"총 {len(df2)}개의 항목")
         st.dataframe(df2, use_container_width=True)
+
+        regression2 = standardized_regression(df2, "평균점수", "총괄평가")
+        if regression2 is not None:
+            st.subheader("회귀 분석 결과")
+            st.markdown(
+                f"- 표준화 계수 (beta): **{regression2['beta']:.4f}**\n"
+                f"- 결정계수 (R²): **{regression2['r2']:.4f}**\n"
+                f"- 상관계수: **{regression2['corr']:.4f}**\n"
+                f"- 표준화 회귀식: Z(총괄평가) = {regression2['beta']:.4f} × Z(평균점수) + {regression2['intercept']:.4f}"
+            )
+        else:
+            st.warning("회귀 분석을 실행할 수 없습니다. '평균점수' 또는 '총괄평가' 열을 확인하세요.")
         
         # 다운로드 버튼
-        excel_file2 = open(file_semester2, 'rb')
-        st.download_button(
-            label="2학기 파일 다운로드",
-            data=excel_file2,
-            file_name="2학기 탐구질문 만들기.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        with open(file_semester2, 'rb') as excel_file2:
+            st.download_button(
+                label="2학기 파일 다운로드",
+                data=excel_file2,
+                file_name="2학기 탐구질문 만들기.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
     except Exception as e:
         st.error(f"파일을 읽을 수 없습니다: {e}")
