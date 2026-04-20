@@ -5,6 +5,20 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.font_manager as fm
+
+# 한글 폰트 설정
+# Noto Sans CJK 폰트 파일 경로
+noto_font_path = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
+if os.path.exists(noto_font_path):
+    fm.fontManager.addfont(noto_font_path)
+    mpl.rcParams['font.family'] = 'Noto Sans CJK JP'
+else:
+    mpl.rcParams['font.family'] = 'DejaVu Sans'
+
+mpl.rcParams['axes.unicode_minus'] = False
+plt.rcParams['font.size'] = 10
 
 # 페이지 설정
 st.set_page_config(page_title="탐구질문 관리", layout="wide")
@@ -168,77 +182,52 @@ with tab3:
             ])
             st.dataframe(comparison_data, use_container_width=True)
             
-            # 회귀 계수 비교 그래프
-            st.subheader("회귀 분석 지표 비교")
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                chart_data = pd.DataFrame({
-                    "학기": ["1학기", "2학기"],
-                    "표준화계수(Beta)": [reg1['beta'], reg2['beta']]
-                })
-                st.bar_chart(chart_data.set_index("학기"))
-                st.metric("표준화 계수 (Beta)", f"1학기: {reg1['beta']:.4f} vs 2학기: {reg2['beta']:.4f}")
-            
-            with col2:
-                chart_data = pd.DataFrame({
-                    "학기": ["1학기", "2학기"],
-                    "결정계수(R²)": [reg1['r2'], reg2['r2']]
-                })
-                st.bar_chart(chart_data.set_index("학기"))
-                st.metric("결정계수 (R²)", f"1학기: {reg1['r2']:.4f} vs 2학기: {reg2['r2']:.4f}")
-            
-            with col3:
-                chart_data = pd.DataFrame({
-                    "학기": ["1학기", "2학기"],
-                    "상관계수": [reg1['corr'], reg2['corr']]
-                })
-                st.bar_chart(chart_data.set_index("학기"))
-                st.metric("상관계수", f"1학기: {reg1['corr']:.4f} vs 2학기: {reg2['corr']:.4f}")
-            
-            # 산점도 비교
+            # 산점도 비교 (통합)
             st.subheader("산점도 비교")
-            col1, col2 = st.columns(2)
             
-            with col1:
-                st.write("**1학기: 평균점수 vs 총괄평가**")
-                # 1학기 산점도와 회귀선
-                fig1, ax1 = plt.subplots(figsize=(8, 6))
-                x1 = df1["평균점수"].values
-                y1 = df1["총괄평가"].values
-                ax1.scatter(x1, y1, alpha=0.6, color='#FF6B6B', s=50)
-                
-                # 회귀선 그리기
-                z = np.polyfit(x1, y1, 1)
-                p = np.poly1d(z)
-                x_line = np.linspace(x1.min(), x1.max(), 100)
-                ax1.plot(x_line, p(x_line), "r-", linewidth=2, label="회귀선")
-                
-                ax1.set_xlabel("탐구질문 만들기 평균점수", fontsize=10)
-                ax1.set_ylabel("총괄평가 점수", fontsize=10)
-                ax1.legend()
-                ax1.grid(True, alpha=0.3)
-                st.pyplot(fig1)
+            # 1학기와 2학기 데이터 통합
+            df1_plot = df1[["평균점수", "총괄평가"]].copy()
+            df1_plot["학기"] = "1학기"
+            df2_plot = df2[["평균점수", "총괄평가"]].copy()
+            df2_plot["학기"] = "2학기"
+            df_combined_plot = pd.concat([df1_plot, df2_plot], ignore_index=True)
             
-            with col2:
-                st.write("**2학기: 평균점수 vs 총괄평가**")
-                # 2학기 산점도와 회귀선
-                fig2, ax2 = plt.subplots(figsize=(8, 6))
-                x2 = df2["평균점수"].values
-                y2 = df2["총괄평가"].values
-                ax2.scatter(x2, y2, alpha=0.6, color='#4ECDC4', s=50)
-                
-                # 회귀선 그리기
-                z = np.polyfit(x2, y2, 1)
-                p = np.poly1d(z)
-                x_line = np.linspace(x2.min(), x2.max(), 100)
-                ax2.plot(x_line, p(x_line), "b-", linewidth=2, label="회귀선")
-                
-                ax2.set_xlabel("탐구질문 만들기 평균점수", fontsize=10)
-                ax2.set_ylabel("총괄평가 점수", fontsize=10)
-                ax2.legend()
-                ax2.grid(True, alpha=0.3)
-                st.pyplot(fig2)
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            # 1학기 점
+            mask1 = df_combined_plot["학기"] == "1학기"
+            ax.scatter(df_combined_plot.loc[mask1, "평균점수"], 
+                      df_combined_plot.loc[mask1, "총괄평가"], 
+                      alpha=0.6, color='#FF6B6B', s=50, label="1학기")
+            
+            # 2학기 점
+            mask2 = df_combined_plot["학기"] == "2학기"
+            ax.scatter(df_combined_plot.loc[mask2, "평균점수"], 
+                      df_combined_plot.loc[mask2, "총괄평가"], 
+                      alpha=0.6, color='#4ECDC4', s=50, label="2학기")
+            
+            # 1학기 회귀선
+            x1 = df1["평균점수"].values
+            y1 = df1["총괄평가"].values
+            z1 = np.polyfit(x1, y1, 1)
+            p1 = np.poly1d(z1)
+            x_line1 = np.linspace(x1.min(), x1.max(), 100)
+            ax.plot(x_line1, p1(x_line1), "r-", linewidth=2, alpha=0.8)
+            
+            # 2학기 회귀선
+            x2 = df2["평균점수"].values
+            y2 = df2["총괄평가"].values
+            z2 = np.polyfit(x2, y2, 1)
+            p2 = np.poly1d(z2)
+            x_line2 = np.linspace(x2.min(), x2.max(), 100)
+            ax.plot(x_line2, p2(x_line2), "b-", linewidth=2, alpha=0.8)
+            
+            ax.set_xlabel("탐구질문 만들기 평균점수", fontsize=11, fontweight='bold')
+            ax.set_ylabel("총괄평가 점수", fontsize=11, fontweight='bold')
+            ax.set_title("1학기 vs 2학기: 평균점수 vs 총괄평가 비교", fontsize=12, fontweight='bold')
+            ax.legend(fontsize=10)
+            ax.grid(True, alpha=0.3)
+            st.pyplot(fig)
             
             # 분석 요약
             st.subheader("분석 요약")
