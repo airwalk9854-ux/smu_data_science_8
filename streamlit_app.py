@@ -9,12 +9,18 @@ import matplotlib as mpl
 import matplotlib.font_manager as fm
 
 # 한글 폰트 설정
-# Noto Sans CJK 폰트 파일 경로
+# Noto Sans CJK 폰트 파일 경로 (로컬 또는 다운로드된 파일)
 noto_font_path = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
+local_font_path = 'NotoSansCJK-Regular.ttc'  # 앱 디렉토리에 다운로드된 폰트
+
 if os.path.exists(noto_font_path):
     fm.fontManager.addfont(noto_font_path)
     mpl.rcParams['font.family'] = 'Noto Sans CJK JP'
+elif os.path.exists(local_font_path):
+    fm.fontManager.addfont(local_font_path)
+    mpl.rcParams['font.family'] = 'Noto Sans CJK JP'
 else:
+    # 폰트가 없으면 기본 폰트 사용 (한글 지원 안 됨)
     mpl.rcParams['font.family'] = 'DejaVu Sans'
 
 mpl.rcParams['axes.unicode_minus'] = False
