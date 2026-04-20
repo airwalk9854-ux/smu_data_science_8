@@ -259,14 +259,6 @@ with tab3:
             ax.grid(True, alpha=0.3)
             st.pyplot(fig)
             
-            # 분석 요약
-            st.subheader("분석 요약")
-            if reg1['beta'] > reg2['beta']:
-                summary = f"1학기의 표준화 계수({reg1['beta']:.4f})가 2학기({reg2['beta']:.4f})보다 크므로, 1학기에서 평균점수가 총괄평가에 미치는 영향이 더 큽니다."
-            else:
-                summary = f"2학기의 표준화 계수({reg2['beta']:.4f})가 1학기({reg1['beta']:.4f})보다 크므로, 2학기에서 평균점수가 총괄평가에 미치는 영향이 더 큽니다."
-            st.info(summary)
-            
             # 종합 분석 및 가설 검증 요약
             st.subheader("종합 분석 및 가설 검증 요약")
             
