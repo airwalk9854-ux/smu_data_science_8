@@ -51,7 +51,13 @@ with tab1:
             st.warning(f"평균점수를 계산할 수 없는 열이 있습니다: {', '.join(missing)}")
 
         st.write(f"총 {len(df1)}개의 항목")
-        st.dataframe(df1, use_container_width=True)
+        
+        # 표시할 열 필터링 및 이름 변경
+        display_cols = ["학년", "학급", "번호", "평균", "총괄평가"]
+        df1_display = df1[display_cols].copy()
+        df1_display = df1_display.rename(columns={"평균": "탐구질문 만들기 평균점수"})
+        
+        st.dataframe(df1_display, use_container_width=True)
 
         regression1 = standardized_regression(df1, "평균점수", "총괄평가")
         if regression1 is not None:
@@ -89,7 +95,13 @@ with tab2:
             st.warning(f"평균점수를 계산할 수 없는 열이 있습니다: {', '.join(missing)}")
 
         st.write(f"총 {len(df2)}개의 항목")
-        st.dataframe(df2, use_container_width=True)
+        
+        # 표시할 열 필터링 및 이름 변경
+        display_cols = ["학년", "학급", "번호", "평균", "총괄평가"]
+        df2_display = df2[display_cols].copy()
+        df2_display = df2_display.rename(columns={"평균": "탐구질문 만들기 평균점수"})
+        
+        st.dataframe(df2_display, use_container_width=True)
 
         regression2 = standardized_regression(df2, "평균점수", "총괄평가")
         if regression2 is not None:
