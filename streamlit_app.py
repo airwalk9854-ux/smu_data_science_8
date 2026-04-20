@@ -179,12 +179,36 @@ with tab3:
         reg1 = standardized_regression(df1, "평균점수", "총괄평가")
         reg2 = standardized_regression(df2, "평균점수", "총괄평가")
         
+        # 통합 데이터로 다중선형 회귀 (학기 더미 + 상호작용)
+        df1_reg = df1[["평균점수", "총괄평가"]].copy()
+        df1_reg["학기"] = 0  # 1학기 더미
+        df2_reg = df2[["평균점수", "총괄평가"]].copy()
+        df2_reg["학기"] = 1  # 2학기 더미
+        df_combined_reg = pd.concat([df1_reg, df2_reg], ignore_index=True)
+        
+        # 표준화 및 상호작용 항 추가
+        scaler = StandardScaler()
+        df_combined_reg["평균점수_z"] = scaler.fit_transform(df_combined_reg[["평균점수"]])
+        df_combined_reg["총괄평가_z"] = StandardScaler().fit_transform(df_combined_reg[["총괄평가"]])
+        df_combined_reg["학기_평균점수"] = df_combined_reg["학기"] * df_combined_reg["평균점수_z"]
+        
+        # 다중선형 회귀
+        X = df_combined_reg[["학기", "평균점수_z", "학기_평균점수"]]
+        y = df_combined_reg["총괄평가_z"]
+        model = LinearRegression().fit(X, y)
+        
+        # 계수 추출
+        coef_semester = model.coef_[0]  # 2학기 효과 (평균점수 0일 때)
+        coef_score = model.coef_[1]    # 1학기 '평균점수' 효과 (기준)
+        coef_interaction = model.coef_[2]  # 2학기 '평균점수' 영향력 변화
+        total_effect_2 = coef_score + coef_interaction
+        
         if reg1 is not None and reg2 is not None:
-            # 회귀분석 결과 비교 테이블
+            # 회귀분석 결과 비교 테이블 (다중회귀 기반)
             st.subheader("회귀분석 결과 비교")
             comparison_data = pd.DataFrame([
-                {"학기": "1학기", "표준화계수(beta)": reg1['beta'], "결정계수(R²)": reg1['r2'], "상관계수": reg1['corr']},
-                {"학기": "2학기", "표준화계수(beta)": reg2['beta'], "결정계수(R²)": reg2['r2'], "상관계수": reg2['corr']}
+                {"학기": "1학기", "평균점수 효과": coef_score, "상호작용 효과": 0, "총 효과": coef_score},
+                {"학기": "2학기", "평균점수 효과": coef_score, "상호작용 효과": coef_interaction, "총 효과": total_effect_2}
             ])
             st.dataframe(comparison_data, use_container_width=True)
             
@@ -249,30 +273,6 @@ with tab3:
             # 평균 계산
             avg_total_1 = df1["총괄평가"].mean().round(3)
             avg_total_2 = df2["총괄평가"].mean().round(3)
-            
-            # 통합 데이터로 다중선형 회귀 (학기 더미 + 상호작용)
-            df1_reg = df1[["평균점수", "총괄평가"]].copy()
-            df1_reg["학기"] = 0  # 1학기 더미
-            df2_reg = df2[["평균점수", "총괄평가"]].copy()
-            df2_reg["학기"] = 1  # 2학기 더미
-            df_combined_reg = pd.concat([df1_reg, df2_reg], ignore_index=True)
-            
-            # 표준화 및 상호작용 항 추가
-            scaler = StandardScaler()
-            df_combined_reg["평균점수_z"] = scaler.fit_transform(df_combined_reg[["평균점수"]])
-            df_combined_reg["총괄평가_z"] = StandardScaler().fit_transform(df_combined_reg[["총괄평가"]])
-            df_combined_reg["학기_평균점수"] = df_combined_reg["학기"] * df_combined_reg["평균점수_z"]
-            
-            # 다중선형 회귀
-            X = df_combined_reg[["학기", "평균점수_z", "학기_평균점수"]]
-            y = df_combined_reg["총괄평가_z"]
-            model = LinearRegression().fit(X, y)
-            
-            # 계수 추출
-            coef_semester = model.coef_[0]  # 2학기 효과 (평균점수 0일 때)
-            coef_score = model.coef_[1]    # 1학기 '평균점수' 효과 (기준)
-            coef_interaction = model.coef_[2]  # 2학기 '평균점수' 영향력 변화
-            total_effect_2 = coef_score + coef_interaction
             
             st.markdown(f"""
 지금까지의 분석 결과를 바탕으로 '탐구질문 생성능력이 성적 향상에 영향력을 더 주었는가?'라는 사용자님의 가설을 검증하고, 관찰된 두 가지 주요 현상(총괄평가 점수 하락과 탐구질문 영향력 증가)을 종합적으로 설명합니다.
