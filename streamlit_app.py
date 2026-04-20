@@ -20,6 +20,13 @@ with tab1:
     st.header("1학기 탐구질문 만들기")
     try:
         df1 = pd.read_excel(file_semester1)
+        score_cols = ["탐구질문 만들기1", "탐구질문 만들기2", "탐구질문 만들기3", "탐구질문 만들기4"]
+        if all(col in df1.columns for col in score_cols):
+            df1["평균점수"] = df1[score_cols].apply(pd.to_numeric, errors="coerce").mean(axis=1).round(2)
+        else:
+            missing = [col for col in score_cols if col not in df1.columns]
+            st.warning(f"평균점수를 계산할 수 없는 열이 있습니다: {', '.join(missing)}")
+
         st.write(f"총 {len(df1)}개의 항목")
         st.dataframe(df1, use_container_width=True)
         
@@ -39,6 +46,13 @@ with tab2:
     st.header("2학기 탐구질문 만들기")
     try:
         df2 = pd.read_excel(file_semester2)
+        score_cols = ["탐구질문 만들기1", "탐구질문 만들기2", "탐구질문 만들기3", "탐구질문 만들기4"]
+        if all(col in df2.columns for col in score_cols):
+            df2["평균점수"] = df2[score_cols].apply(pd.to_numeric, errors="coerce").mean(axis=1).round(2)
+        else:
+            missing = [col for col in score_cols if col not in df2.columns]
+            st.warning(f"평균점수를 계산할 수 없는 열이 있습니다: {', '.join(missing)}")
+
         st.write(f"총 {len(df2)}개의 항목")
         st.dataframe(df2, use_container_width=True)
         
