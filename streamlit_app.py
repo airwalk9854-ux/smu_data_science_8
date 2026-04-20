@@ -22,7 +22,7 @@ def standardized_regression(df, x_col, y_col):
     if x_col not in df.columns or y_col not in df.columns:
         return None
 
-    X = pd.to_numeric(df[[x_col]], errors="coerce")
+    X = df[[x_col]].apply(pd.to_numeric, errors="coerce")
     y = pd.to_numeric(df[y_col], errors="coerce")
     valid = X[x_col].notna() & y.notna()
     if valid.sum() < 2:
