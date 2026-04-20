@@ -257,25 +257,36 @@ with tab3:
             df2_reg["학기"] = 1  # 2학기 더미
             df_combined_reg = pd.concat([df1_reg, df2_reg], ignore_index=True)
             
-            # 상호작용 항 추가
-            df_combined_reg["학기_평균점수"] = df_combined_reg["학기"] * df_combined_reg["평균점수"]
+            # 표준화 및 상호작용 항 추가
+            scaler = StandardScaler()
+            df_combined_reg["평균점수_z"] = scaler.fit_transform(df_combined_reg[["평균점수"]])
+            df_combined_reg["총괄평가_z"] = StandardScaler().fit_transform(df_combined_reg[["총괄평가"]])
+            df_combined_reg["학기_평균점수"] = df_combined_reg["학기"] * df_combined_reg["평균점수_z"]
             
             # 다중선형 회귀
-            from sklearn.linear_model import LinearRegression
-            X = df_combined_reg[["학기", "평균점수", "학기_평균점수"]]
-            y = df_combined_reg["총괄평가"]
+            X = df_combined_reg[["학기", "평균점수_z", "학기_평균점수"]]
+            y = df_combined_reg["총괄평가_z"]
             model = LinearRegression().fit(X, y)
             
             # 계수 추출
-            intercept = model.intercept_
-            coef_semester = model.coef_[0]  # 학기 계수
-            coef_score = model.coef_[1]    # 평균점수 계수 (1학기 기준)
-            coef_interaction = model.coef_[2]  # 상호작용 계수
-            
-            # 2학기 총 영향력 = coef_score + coef_interaction
+            coef_semester = model.coef_[0]  # 2학기 효과 (평균점수 0일 때)
+            coef_score = model.coef_[1]    # 1학기 '평균점수' 효과 (기준)
+            coef_interaction = model.coef_[2]  # 2학기 '평균점수' 영향력 변화
             total_effect_2 = coef_score + coef_interaction
             
             st.markdown(f"""
+--- 1학기 단일 회귀 모델의 표준화 계수 ---
+{reg1['beta']:.14f}
+
+--- 2학기 단일 회귀 모델의 표준화 계수 ---
+{reg2['beta']:.13f}
+
+--- 종합 다중선형 회귀 모델의 표준화 계수 ---
+1학기 '탐구질문 평균점수' 효과 (기준): {coef_score:.14f}
+2학기 '탐구질문 평균점수' 영향력 변화 (상호작용): {coef_interaction:.14f}
+2학기 '탐구질문 평균점수' 총 효과 (1학기 효과 + 변화): {total_effect_2:.13f}
+2학기 효과 (탐구질문 평균점수 0일 때): {coef_semester:.14f}
+
 지금까지의 분석 결과를 바탕으로 '탐구질문 생성능력이 성적 향상에 영향력을 더 주었는가?'라는 사용자님의 가설을 검증하고, 관찰된 두 가지 주요 현상(총괄평가 점수 하락과 탐구질문 영향력 증가)을 종합적으로 설명합니다.
 
 1. **총괄평가 점수의 전반적인 하락:**
